@@ -111,6 +111,15 @@ func (il *IntegerLiteral) expressionNode()      {}
 func (il *IntegerLiteral) TokenLiteral() string { return il.Token.Literal }
 func (il *IntegerLiteral) String() string       { return il.Token.Literal }
 
+type StringLiteral struct {
+	Token token.Token
+	Value string
+}
+
+func (sl *StringLiteral) expressionNode()      {}
+func (sl *StringLiteral) TokenLiteral() string { return sl.Token.Literal }
+func (sl *StringLiteral) String() string       { return sl.Token.Literal }
+
 type PrefixExpression struct {
 	Token    token.Token // the prefix token (e.g., !)
 	Operator string
@@ -216,6 +225,7 @@ func (fl *FunctionLiteral) String() string {
 	return sb.String()
 }
 
+// CallExpression is a general struct for function literals or explicit functions
 type CallExpression struct {
 	Token     token.Token // the '(' token
 	Function  Expression  // identifier or functionLiteral
@@ -234,5 +244,42 @@ func (ce *CallExpression) String() string {
 	sb.WriteString("(")
 	sb.WriteString(strings.Join(args, ", "))
 	sb.WriteString(")")
+	return sb.String()
+}
+
+type ArrayLiteral struct {
+	Token    token.Token // the '[' token
+	Elements []Expression
+}
+
+func (al *ArrayLiteral) expressionNode()      {}
+func (al *ArrayLiteral) TokenLiteral() string { return al.Token.Literal }
+func (al *ArrayLiteral) String() string {
+	var sb strings.Builder
+	elements := []string{}
+	for _, el := range al.Elements {
+		elements = append(elements, el.String())
+	}
+	sb.WriteString("[")
+	sb.WriteString(strings.Join(elements, ", "))
+	sb.WriteString("]")
+	return sb.String()
+}
+
+type IndexExpression struct {
+	Token token.Token // the '[' token
+	Left  Expression  // an expression that produces an object being accessed
+	Index Expression  // an expression that produces an integer
+}
+
+func (ie *IndexExpression) expressionNode()      {}
+func (ie *IndexExpression) TokenLiteral() string { return ie.Token.Literal }
+func (ie *IndexExpression) String() string {
+	var sb strings.Builder
+	sb.WriteString("(")
+	sb.WriteString(ie.Left.String())
+	sb.WriteString("[")
+	sb.WriteString(ie.Index.String())
+	sb.WriteString("])")
 	return sb.String()
 }
