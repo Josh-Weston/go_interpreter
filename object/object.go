@@ -2,6 +2,7 @@ package object
 
 import (
 	"fmt"
+	"hash/fnv"
 	"strings"
 
 	"github.com/josh-weston/go_interpreter/ast"
@@ -23,6 +24,7 @@ const (
 	STRING_OBJ       = "STRING"
 	BUILTIN_OBJ      = "BUILTIN"
 	ARRAY_OBJ        = "ARRAY"
+	HASH_OBJ         = "HASH"
 )
 
 type Object interface {
@@ -113,4 +115,60 @@ func (ao *Array) Inspect() string {
 	sb.WriteString(strings.Join(elements, ","))
 	sb.WriteString("]")
 	return sb.String()
+}
+
+// Because Type is just a string and Value is an integer, we can use equality between HashKeys (==) and
+// we can use them as the key to a map
+type HashKey struct {
+	Type  ObjectType
+	Value uint64
+}
+
+func (b *Boolean) HashKey() HashKey {
+	var value uint64
+	if b.Value {
+		value = 1
+	} else {
+		value = 0
+	}
+	return HashKey{Type: b.Type(), Value: value}
+}
+
+func (i *Integer) HashKey() HashKey {
+	return HashKey{Type: i.Type(), Value: uint64(i.Value)}
+}
+
+// OPTIMIZATION: cache the result of HashKey() so it isn't computed each time it is called
+func (s *String) HashKey() HashKey {
+	h := fnv.New64a()
+	h.Write([]byte(s.Value))
+	return HashKey{Type: s.Type(), Value: h.Sum64()}
+}
+
+type HashPair struct {
+	Key   Object
+	Value Object
+}
+
+type Hash struct {
+	Pairs map[HashKey]HashPair
+}
+
+func (h *Hash) Type() ObjectType { return HASH_OBJ }
+
+func (h *Hash) Inspect() string {
+	var sb strings.Builder
+	pairs := []string{}
+	for _, pair := range h.Pairs {
+		pairs = append(pairs, fmt.Sprintf("%s: %s",
+			pair.Key.Inspect(), pair.Value.Inspect()))
+	}
+	sb.WriteString("{")
+	sb.WriteString(strings.Join(pairs, ", "))
+	sb.WriteString("}")
+	return sb.String()
+}
+
+type Hashable interface {
+	HashKey() HashKey // ensures only structs implementing the HashKey() method are considered hashable (used by the evaluator)
 }
