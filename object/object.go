@@ -25,6 +25,8 @@ const (
 	BUILTIN_OBJ      = "BUILTIN"
 	ARRAY_OBJ        = "ARRAY"
 	HASH_OBJ         = "HASH"
+	QUOTE_OBJ        = "QUOTE"
+	MACRO_OBJ        = "MACRO"
 )
 
 type Object interface {
@@ -171,4 +173,34 @@ func (h *Hash) Inspect() string {
 
 type Hashable interface {
 	HashKey() HashKey // ensures only structs implementing the HashKey() method are considered hashable (used by the evaluator)
+}
+
+type Quote struct {
+	Node ast.Node
+}
+
+func (q *Quote) Type() ObjectType { return QUOTE_OBJ }
+func (q *Quote) Inspect() string {
+	return "QUOTE(" + q.Node.String() + ")"
+}
+
+type Macro struct {
+	Parameters []*ast.Identifier
+	Body       *ast.BlockStatement
+	Env        *Environment
+}
+
+func (f *Macro) Type() ObjectType { return MACRO_OBJ }
+func (f *Macro) Inspect() string {
+	var sb strings.Builder
+	params := []string{}
+	for _, p := range f.Parameters {
+		params = append(params, p.String())
+	}
+	sb.WriteString("fn(")
+	sb.WriteString(strings.Join(params, ","))
+	sb.WriteString(") {\n")
+	sb.WriteString(f.Body.String())
+	sb.WriteString("\n")
+	return sb.String()
 }

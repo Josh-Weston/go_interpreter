@@ -302,3 +302,25 @@ func (hl *HashLiteral) String() string {
 	sb.WriteString("}")
 	return sb.String()
 }
+
+type MacroLiteral struct {
+	Token      token.Token // the 'macro' token
+	Parameters []*Identifier
+	Body       *BlockStatement
+}
+
+func (ml *MacroLiteral) expressionNode()      {}
+func (ml *MacroLiteral) TokenLiteral() string { return ml.Token.Literal }
+func (ml *MacroLiteral) String() string {
+	var sb strings.Builder
+	params := []string{}
+	for _, p := range ml.Parameters {
+		params = append(params, p.String())
+	}
+	sb.WriteString(ml.TokenLiteral())
+	sb.WriteString("(")
+	sb.WriteString(strings.Join(params, ", "))
+	sb.WriteString(")")
+	sb.WriteString(ml.Body.String())
+	return sb.String()
+}
